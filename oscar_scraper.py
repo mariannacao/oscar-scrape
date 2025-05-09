@@ -1,6 +1,5 @@
 import requests
 from bs4 import BeautifulSoup
-import time
 import logging
 from datetime import datetime
 import os
@@ -99,32 +98,25 @@ def main():
     
     scraper = OscarScraper(url, discord_webhook_url)
     
-    logging.info("Starting course availability checker...")
-    logging.info(f"Monitoring URL: {url}")
+    logging.info("Starting course availability check...")
+    logging.info(f"Checking URL: {url}")
     
     try:
-        while True:
-            result = scraper.check_availability()
+        result = scraper.check_availability()
+        
+        if result:
+            enrolled, capacity = result
+            remaining = capacity - enrolled
+            logging.info(f"Current status - Enrolled: {enrolled}/{capacity}, Remaining: {remaining}")
             
-            if result:
-                enrolled, capacity = result
-                remaining = capacity - enrolled
-                logging.info(f"Current status - Enrolled: {enrolled}/{capacity}, Remaining: {remaining}")
-                
-                if remaining > 0:
-                    logging.info("Spot available! Sending notification...")
-                    scraper.send_notification(enrolled, capacity)
-                    break
-            else:
-                logging.warning("Failed to get enrollment information, will retry in 5 minutes")
-            
-            logging.info("Waiting 5 minutes before next check...")
-            time.sleep(300)
+            if remaining > 0:
+                logging.info("Spot available! Sending notification...")
+                scraper.send_notification(enrolled, capacity)
+        else:
+            logging.warning("Failed to get enrollment information")
     
-    except KeyboardInterrupt:
-        logging.info("Scraper stopped by user")
     except Exception as e:
-        logging.error(f"Unexpected error in main loop: {e}")
+        logging.error(f"Unexpected error in main: {e}")
 
 if __name__ == "__main__":
     main() 

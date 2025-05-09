@@ -1,6 +1,6 @@
 # oscar course availability checker
 
-this script monitors a specific course in georgia tech's oscar system and notifies you via discord when a spot becomes available. it runs on a server with automatic restart capability.
+this script monitors a specific course in georgia tech's oscar system and notifies you via discord when a spot becomes available. it runs on a server using crontab for efficient scheduling.
 
 ## setup
 
@@ -26,14 +26,14 @@ python test_notification.py
 
 ## running locally
 
-to run the script on your local machine:
+to run the script once on your local machine:
 ```bash
 python oscar_scraper.py
 ```
 
 ## running on server
 
-the script is configured to run on a server with automatic restart capability. to deploy to your own server:
+the script is configured to run on a server using crontab to check every 5 minutes. to deploy to your own server:
 
 1. set up a server:
    - you can use any linux server (aws ec2, digitalocean, linode, etc.)
@@ -41,8 +41,8 @@ the script is configured to run on a server with automatic restart capability. t
    - note down your server's ip address and ssh port
 
 2. prepare deployment:
-   - copy `deploy.sh.example` to `deploy.sh`
-   - update the server details in `deploy.sh`:
+   - copy `deploy.sh.example` to `deploy.sh.local`
+   - update the server details in `deploy.sh.local`:
      ```bash
      SERVER="your-username@your-server-ip"
      PORT="your-ssh-port"  # usually 22
@@ -50,54 +50,72 @@ the script is configured to run on a server with automatic restart capability. t
 
 3. run the deployment script:
 ```bash
-chmod +x deploy.sh
-./deploy.sh
+chmod +x deploy.sh.local
+./deploy.sh.local
 ```
 
 the deployment script will:
 - copy all necessary files to the server
 - set up a python virtual environment
 - install required dependencies
-- start the scraper with automatic restart capability
+- set up crontab to run the script every 5 minutes
+- test the discord notification
 
 ## monitoring
 
 to check the status of the scraper on your server:
 
 ```bash
-# check supervisor logs (restart information)
-ssh -p $PORT $SERVER "tail -f ~/oscar-scraper/supervisor.log"
+# check if crontab is running
+ssh -p $PORT $SERVER "crontab -l"
 
-# check scraper logs (course availability checks)
+# check recent logs
 ssh -p $PORT $SERVER "tail -f ~/oscar-scraper/scraper.log"
 
-# check if supervisor is running
-ssh -p $PORT $SERVER "ps aux | grep supervisor.sh"
+# check last 20 log entries
+ssh -p $PORT $SERVER "tail -n 20 ~/oscar-scraper/scraper.log"
 ```
 
-to stop the scraper:
+## stopping the script
+
+to stop the script from running:
 ```bash
-ssh -p $PORT $SERVER "pkill -f supervisor.sh"
+# remove the crontab entry
+ssh -p $PORT $SERVER "crontab -l | grep -v 'oscar_scraper.py' | crontab -"
 ```
 
 ## features
 
-- checks course availability every 5 minutes
+- checks course availability every 5 minutes using crontab
 - sends discord notifications when a spot opens up
 - notifications include:
   - current enrollment status
   - number of remaining spots
   - direct link to register
   - timestamp
-- runs on a server with automatic restart capability
+- runs efficiently using crontab scheduling
 - logs all activity to `scraper.log`
-- supervisor script ensures continuous operation
+- automatically restarts after server reboots (thanks to crontab)
 
 ## notes
 
-- the script will continue running until a spot becomes available
-- you can modify the check interval by changing the `time.sleep()` value in the script
+- the script checks availability every 5 minutes
 - all errors and activities are logged to `scraper.log` for debugging purposes
 - notifications can be received on both your phone and laptop through discord
-- if the script crashes, it will automatically restart after 5 seconds
+- the script will continue running until you remove it from crontab
+- crontab ensures the script runs even after server restarts
 - you'll need your own server to run this continuously
+
+## modifying check interval
+
+to change how often the script checks for availability:
+1. ssh into your server
+2. edit the crontab:
+   ```bash
+   ssh -p $PORT $SERVER "crontab -e"
+   ```
+3. modify the timing in the crontab entry:
+   - `*/5 * * * *` = every 5 minutes
+   - `*/10 * * * *` = every 10 minutes
+   - `*/1 * * * *` = every minute
+   - etc.
