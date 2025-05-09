@@ -5,6 +5,9 @@ supervisor.log
 # Environment variables
 .env
 
+# Local configuration files
+*.local
+
 # Python
 __pycache__/
 *.py[cod]
