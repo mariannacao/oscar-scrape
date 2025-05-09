@@ -1,10 +1,15 @@
 import requests
 from bs4 import BeautifulSoup
 import time
-from plyer import notification
 import logging
 from datetime import datetime
+import os
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
+
+# Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -15,8 +20,9 @@ logging.basicConfig(
 )
 
 class OscarScraper:
-    def __init__(self, url):
+    def __init__(self, url, discord_webhook_url):
         self.url = url
+        self.discord_webhook_url = discord_webhook_url
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
@@ -57,23 +63,41 @@ class OscarScraper:
             return None
 
     def send_notification(self, enrolled, capacity):
-        title = "Course Spot Available!"
-        message = f"A spot has opened up! Current enrollment: {enrolled}/{capacity}"
+        title = "🎓 Course Spot Available!"
+        message = f"A spot has opened up in CS 7650!\nCurrent enrollment: {enrolled}/{capacity}\nRemaining spots: {capacity - enrolled}\n\n[Click here to register]({self.url})"
         
         try:
-            notification.notify(
-                title=title,
-                message=message,
-                app_icon=None,
-                timeout=10,
+            # Create Discord embed
+            embed = {
+                "title": title,
+                "description": message,
+                "color": 5814783,  # Blue color
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+            # Send to Discord
+            payload = {
+                "embeds": [embed]
+            }
+            
+            response = requests.post(
+                self.discord_webhook_url,
+                json=payload
             )
-            logging.info("Notification sent successfully")
+            response.raise_for_status()
+            logging.info("Discord notification sent successfully")
         except Exception as e:
-            logging.error(f"Failed to send notification: {e}")
+            logging.error(f"Failed to send Discord notification: {e}")
 
 def main():
     url = "https://oscar.gatech.edu/pls/bprod/bwckschd.p_disp_detail_sched?term_in=202505&crn_in=57752"
-    scraper = OscarScraper(url)
+    discord_webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
+    
+    if not discord_webhook_url:
+        logging.error("Discord webhook URL not found in environment variables!")
+        return
+    
+    scraper = OscarScraper(url, discord_webhook_url)
     
     logging.info("Starting course availability checker...")
     logging.info(f"Monitoring URL: {url}")
