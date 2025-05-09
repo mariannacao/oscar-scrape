@@ -1,5 +1,9 @@
 # Scraper logs
 scraper.log
+supervisor.log
+
+# Environment variables
+.env
 
 # Python
 __pycache__/

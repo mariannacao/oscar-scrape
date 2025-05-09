@@ -33,11 +33,24 @@ python oscar_scraper.py
 
 ## running on server
 
-the script is configured to run on a server with automatic restart capability. to deploy:
+the script is configured to run on a server with automatic restart capability. to deploy to your own server:
 
-1. make sure you have ssh access to the server
-2. run the deployment script:
+1. set up a server:
+   - you can use any linux server (aws ec2, digitalocean, linode, etc.)
+   - make sure you have ssh access to the server
+   - note down your server's ip address and ssh port
+
+2. prepare deployment:
+   - copy `deploy.sh.example` to `deploy.sh`
+   - update the server details in `deploy.sh`:
+     ```bash
+     SERVER="your-username@your-server-ip"
+     PORT="your-ssh-port"  # usually 22
+     ```
+
+3. run the deployment script:
 ```bash
+chmod +x deploy.sh
 ./deploy.sh
 ```
 
@@ -49,22 +62,22 @@ the deployment script will:
 
 ## monitoring
 
-to check the status of the scraper on the server:
+to check the status of the scraper on your server:
 
 ```bash
 # check supervisor logs (restart information)
-ssh -p your-ssh-port your-username@your-server-ip "tail -f ~/oscar-scraper/supervisor.log"
+ssh -p $PORT $SERVER "tail -f ~/oscar-scraper/supervisor.log"
 
 # check scraper logs (course availability checks)
-ssh -p your-ssh-port your-username@your-server-ip "tail -f ~/oscar-scraper/scraper.log"
+ssh -p $PORT $SERVER "tail -f ~/oscar-scraper/scraper.log"
 
 # check if supervisor is running
-ssh -p your-ssh-port your-username@your-server-ip "ps aux | grep supervisor.sh"
+ssh -p $PORT $SERVER "ps aux | grep supervisor.sh"
 ```
 
 to stop the scraper:
 ```bash
-ssh -p your-ssh-port your-username@your-server-ip "pkill -f supervisor.sh"
+ssh -p $PORT $SERVER "pkill -f supervisor.sh"
 ```
 
 ## features
@@ -87,3 +100,4 @@ ssh -p your-ssh-port your-username@your-server-ip "pkill -f supervisor.sh"
 - all errors and activities are logged to `scraper.log` for debugging purposes
 - notifications can be received on both your phone and laptop through discord
 - if the script crashes, it will automatically restart after 5 seconds
+- you'll need your own server to run this continuously
