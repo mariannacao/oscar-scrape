@@ -1,6 +1,6 @@
 # oscar course availability checker
 
-this script monitors a specific course in georgia tech's oscar system and notifies you via discord when a spot becomes available.
+this script monitors a specific course in georgia tech's oscar system and notifies you via discord when a spot becomes available. it runs on a server with automatic restart capability.
 
 ## setup
 
@@ -24,9 +24,47 @@ pip install -r requirements.txt
 python test_notification.py
 ```
 
-5. run the script:
+## running locally
+
+to run the script on your local machine:
 ```bash
 python oscar_scraper.py
+```
+
+## running on server
+
+the script is configured to run on a server with automatic restart capability. to deploy:
+
+1. make sure you have ssh access to the server
+2. run the deployment script:
+```bash
+./deploy.sh
+```
+
+the deployment script will:
+- copy all necessary files to the server
+- set up a python virtual environment
+- install required dependencies
+- start the scraper with automatic restart capability
+
+## monitoring
+
+to check the status of the scraper on the server:
+
+```bash
+# check supervisor logs (restart information)
+ssh -p your-ssh-port your-username@your-server-ip "tail -f ~/oscar-scraper/supervisor.log"
+
+# check scraper logs (course availability checks)
+ssh -p your-ssh-port your-username@your-server-ip "tail -f ~/oscar-scraper/scraper.log"
+
+# check if supervisor is running
+ssh -p your-ssh-port your-username@your-server-ip "ps aux | grep supervisor.sh"
+```
+
+to stop the scraper:
+```bash
+ssh -p your-ssh-port your-username@your-server-ip "pkill -f supervisor.sh"
 ```
 
 ## features
@@ -38,7 +76,9 @@ python oscar_scraper.py
   - number of remaining spots
   - direct link to register
   - timestamp
+- runs on a server with automatic restart capability
 - logs all activity to `scraper.log`
+- supervisor script ensures continuous operation
 
 ## notes
 
@@ -46,3 +86,4 @@ python oscar_scraper.py
 - you can modify the check interval by changing the `time.sleep()` value in the script
 - all errors and activities are logged to `scraper.log` for debugging purposes
 - notifications can be received on both your phone and laptop through discord
+- if the script crashes, it will automatically restart after 5 seconds
