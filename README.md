@@ -1,4 +1,4 @@
-# oscar course availability checker
+# georgia tech oscar course availability checker
 
 monitors a specific course in georgia tech's oscar system and sends discord notifications when a spot opens up.
 
